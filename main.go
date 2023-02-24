@@ -214,7 +214,7 @@ func AutoDownload_ChromeDriver(printLog bool) string {
 	path,version, _ := Download()
 	DeleteTemFile()
 	if printLog{
-		println("successful checking chrome driver for version: %s .",version)
+		fmt.Printf("successful checking chrome driver for version: %s.\n", version)
 	}
 	return path
 }
