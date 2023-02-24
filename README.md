@@ -1,4 +1,4 @@
-# SeleniumDriverCheck
+# SeleniumDriverCheck - Auto installing chrome driver for Go-selenium
 
 # Usage
 
