@@ -122,7 +122,6 @@ func GetMatchedChromeDriverVersion(version string) (string, error) {
 		xml.Unmarshal([]byte(res.String()), &versionList)
 		for _, k := range versionList.Contents {
 			if strings.Index(k.Key, getMajorVersion(version)+".") == 0 {
-				fmt.Println()
 				return strings.Split(k.Key, "/")[0], nil
 			}
 		}
@@ -131,10 +130,10 @@ func GetMatchedChromeDriverVersion(version string) (string, error) {
 }
 
 //下载Chrome Driver 临时文件  >  Download Chrome Driver Temp File
-func Download() (string, error) {
+func Download() (string,string, error) {
 	LocalPath, Err := CheckFile()
 	if Err != nil {
-		return "", Err
+		return "","", Err
 	}
 	Status, ChromeVersion := GetChromeVersion()
 	if !Status {
@@ -142,24 +141,24 @@ func Download() (string, error) {
 	}
 	ChromeDriverVersion, Err := GetMatchedChromeDriverVersion(ChromeVersion[:14])
 	if Err != nil {
-		return "", Err
+		return "","", Err
 	}
-	fmt.Println(ChromeDriverVersion)
+	
 	DownLoadUrl, _ := GetChromeDriverDownLoadUrl(ChromeDriverVersion)
 	// 下载 chromedriver
 	resp, err := grequests.Get(DownLoadUrl, nil)
 	if err != nil {
-		return "", err
+		return "","", Err
 	}
 	defer resp.Close()
 	// 保存文件到本地
 	localFile, err := os.Create(LocalPath + "\\Tempchromedriver.zip")
 	if err != nil {
-		return "", err
+		return "","", Err
 	}
 	defer localFile.Close()
 	if _, copyErr := io.Copy(localFile, resp); err != nil {
-		return "", copyErr
+		return "","", copyErr
 	}
 	FilePath := LocalPath + "\\Tempchromedriver.zip"
 	//将filePath中的chromedriver.exe文件解压到当前文件夹
@@ -175,24 +174,24 @@ func Download() (string, error) {
 		// 打开文件
 		rc, rangeErr := f.Open()
 		if rangeErr != nil {
-			return "", rangeErr
+			return "","", rangeErr
 		}
 		defer rc.Close()
 
 		// 创建目标文件
 		CreateFile, creErr := os.Create(LocalPath + "\\" + f.Name)
 		if creErr != nil {
-			return "", creErr
+			return "","", creErr
 		}
 		defer CreateFile.Close()
 
 		// 复制文件内容
 		if _, copyErr := io.Copy(CreateFile, rc); copyErr != nil {
-			return "", copyErr
+			return "","", copyErr
 		}
 	}
 	//删除 LocalPath + "\\Tempchromedriver.zip"
-	return LocalPath + "\\chromedriver.exe", nil
+	return LocalPath + "\\chromedriver.exe",ChromeDriverVersion, nil
 }
 
 //删除临时文件  > Delete Temp File
@@ -210,9 +209,12 @@ func CleanAllFile() {
 }
 
 //流程 >  Process  >  Main
-func Download_ChromeDriver() string {
+func AutoDownload_ChromeDriver(printLog bool) string {
 	CleanAllFile()
-	path, _ := Download()
+	path,version, _ := Download()
 	DeleteTemFile()
+	if printLog{
+		println("successful checking chrome driver for version: %s .",version)
+	}
 	return path
 }
