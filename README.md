@@ -1,6 +1,7 @@
-# SeleniumDriverCheck - Auto installing chrome driver for Go-selenium
+## SeleniumDriverCheck 
+this package is for auto installing chrome driver for Go-selenium
 
-# Usage
+### Usage
 
 ```
 printLog := true
