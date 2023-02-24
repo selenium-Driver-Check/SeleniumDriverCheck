@@ -4,7 +4,6 @@ import (
 	"archive/zip"
 	"encoding/xml"
 	"fmt"
-	"github.com/levigross/grequests"
 	"io"
 	"io/ioutil"
 	"os"
@@ -13,6 +12,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/levigross/grequests"
 )
 
 type ListBucketResult struct {
@@ -23,7 +24,7 @@ type Contents struct {
 	Key string `xml:"Key"`
 }
 
-var fileName = "SleniumDriverPath"
+var fileName = "SeleniumDriverPath"
 
 func CheckFile() (string, error) {
 	//检测用户系统是windows还是mac
@@ -136,7 +137,7 @@ func Download() (string, error) {
 		return "", Err
 	}
 	Status, ChromeVersion := GetChromeVersion()
-	if Status != true {
+	if !Status {
 		panic("Chrome is not installed.")
 	}
 	ChromeDriverVersion, Err := GetMatchedChromeDriverVersion(ChromeVersion[:14])
@@ -209,7 +210,7 @@ func CleanAllFile() {
 }
 
 //流程 >  Process  >  Main
-func DownLoad_ChromeDriver() string {
+func Download_ChromeDriver() string {
 	CleanAllFile()
 	path, _ := Download()
 	DeleteTemFile()
