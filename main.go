@@ -31,7 +31,6 @@ func CheckFile() (string, error) {
 	if runtime.GOOS == "windows" {
 		//检测当前用户电脑用户名
 		u, err := user.Current()
-		mainversion := GetVersionForCreateFile()
 		if err == nil {
 			//查看C:\Users\u.Username\AppData\Local下有哪些文件
 			dir := fmt.Sprintf(`C:\Users\%s\AppData\Local`, GetRealName(u.Username))
@@ -41,18 +40,7 @@ func CheckFile() (string, error) {
 			}
 			for _, checkfile := range files {
 				if checkfile.Name() == fileName {
-					//读取该文件夹中所有文件
-					dir2 := fmt.Sprintf(`C:\Users\%s\AppData\Local\%s`, GetRealName(u.Username), fileName)
-					files2, readErr1 := ioutil.ReadDir(dir2)
-					if readErr1 != nil {
-						return "", readErr1
-					}
-					for _, checkfile2 := range files2 {
-						if checkfile2.Name() == mainversion {
-							return filepath.Join(dir2, checkfile2.Name()), nil
-						}
-					}
-					return "", nil
+					return filepath.Join(dir, checkfile.Name()), nil
 				}
 			}
 			createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
@@ -168,6 +156,7 @@ func Download() (string, error) {
 	}
 
 	DownLoadUrl, _ := GetChromeDriverDownLoadUrl(ChromeDriverVersion)
+	fmt.Println(DownLoadUrl)
 	// 下载 chromedriver
 	resp, err := grequests.Get(DownLoadUrl, nil)
 	if err != nil {
@@ -225,21 +214,30 @@ func DeleteTemFile() {
 	os.Remove(LocalPath + "\\LICENSE.chromedriver")
 }
 
-//清理所有文件  >  Clean All File
-func CleanAllFile() string {
+//查看driver实例是否存在  >
+func CheckDriverInstace() string {
+	mainVersion := GetVersionForCreateFile()
 	LocalPath, err := CheckFile()
 	if err == nil && LocalPath != "" {
-		return LocalPath
+		//查看 localPath+"\\"+mainVersion+".exe是否存在
+		_, findErr := os.Stat(LocalPath + "\\" + mainVersion + ".exe")
+		if findErr == nil {
+			return LocalPath + "\\" + mainVersion + ".exe"
+		} else {
+			return ""
+		}
 	}
 	return ""
 }
 
 //流程 >  Process  >  Main
 func AutoDownload_ChromeDriver(printLog bool) string {
-	driverPatch := CleanAllFile()
+	fmt.Println("1")
+	driverPatch := CheckDriverInstace()
 	if driverPatch != "" {
 		return driverPatch
 	}
+	fmt.Println("准备下载")
 	path, _ := Download()
 	DeleteTemFile()
 	if printLog {
