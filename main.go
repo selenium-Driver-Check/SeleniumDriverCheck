@@ -141,7 +141,7 @@ func GetMatchedChromeDriverVersion(version string) (string, error) {
 }
 
 //下载Chrome Driver 临时文件  >  Download Chrome Driver Temp File
-func Download() (string, version, error) {
+func Download() (string, string, error) {
 	version := GetVersionForCreateFile()
 	LocalPath, Err := CheckFile()
 	if Err != nil {
