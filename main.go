@@ -31,6 +31,7 @@ func CheckFile() (string, error) {
 	if runtime.GOOS == "windows" {
 		//检测当前用户电脑用户名
 		u, err := user.Current()
+		mainversion := GetVersionForCreateFile()
 		if err == nil {
 			//查看C:\Users\u.Username\AppData\Local下有哪些文件
 			dir := fmt.Sprintf(`C:\Users\%s\AppData\Local`, GetRealName(u.Username))
@@ -40,7 +41,18 @@ func CheckFile() (string, error) {
 			}
 			for _, checkfile := range files {
 				if checkfile.Name() == fileName {
-					return filepath.Join(dir, checkfile.Name()), nil
+					//读取该文件夹中所有文件
+					dir2 := fmt.Sprintf(`C:\Users\%s\AppData\Local\%s`, GetRealName(u.Username), fileName)
+					files2, readErr1 := ioutil.ReadDir(dir2)
+					if readErr1 != nil {
+						return "", readErr1
+					}
+					for _, checkfile2 := range files2 {
+						if checkfile2.Name() == mainversion {
+							return filepath.Join(dir2, checkfile2.Name()), nil
+						}
+					}
+					return "", nil
 				}
 			}
 			createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
@@ -61,6 +73,17 @@ func GetRealName(fullName string) string {
 		return realName
 	}
 	return fullName
+}
+
+//获取chrome主版本号，用于创建文件夹  >
+func GetVersionForCreateFile() string {
+	status, chromeVersion := GetChromeVersion()
+	if status == true {
+		mainVersion := getMajorVersion(chromeVersion)
+		return mainVersion
+	} else {
+		panic("Chrome is not installed.")
+	}
 }
 
 //获取电脑系统版本 > Get Pc Version
@@ -130,10 +153,10 @@ func GetMatchedChromeDriverVersion(version string) (string, error) {
 }
 
 //下载Chrome Driver 临时文件  >  Download Chrome Driver Temp File
-func Download() (string,string, error) {
+func Download() (string, error) {
 	LocalPath, Err := CheckFile()
 	if Err != nil {
-		return "","", Err
+		return "", Err
 	}
 	Status, ChromeVersion := GetChromeVersion()
 	if !Status {
@@ -141,24 +164,24 @@ func Download() (string,string, error) {
 	}
 	ChromeDriverVersion, Err := GetMatchedChromeDriverVersion(ChromeVersion[:14])
 	if Err != nil {
-		return "","", Err
+		return "", Err
 	}
-	
+
 	DownLoadUrl, _ := GetChromeDriverDownLoadUrl(ChromeDriverVersion)
 	// 下载 chromedriver
 	resp, err := grequests.Get(DownLoadUrl, nil)
 	if err != nil {
-		return "","", Err
+		return "", Err
 	}
 	defer resp.Close()
 	// 保存文件到本地
 	localFile, err := os.Create(LocalPath + "\\Tempchromedriver.zip")
 	if err != nil {
-		return "","", Err
+		return "", Err
 	}
 	defer localFile.Close()
 	if _, copyErr := io.Copy(localFile, resp); err != nil {
-		return "","", copyErr
+		return "", copyErr
 	}
 	FilePath := LocalPath + "\\Tempchromedriver.zip"
 	//将filePath中的chromedriver.exe文件解压到当前文件夹
@@ -168,30 +191,31 @@ func Download() (string,string, error) {
 		panic(err)
 	}
 	defer zipRead.Close()
-
+	version := GetVersionForCreateFile()
 	// 遍历压缩包中的每一个文件
 	for _, f := range zipRead.File {
 		// 打开文件
 		rc, rangeErr := f.Open()
 		if rangeErr != nil {
-			return "","", rangeErr
+			return "", rangeErr
 		}
 		defer rc.Close()
 
 		// 创建目标文件
 		CreateFile, creErr := os.Create(LocalPath + "\\" + f.Name)
+		os.Rename(LocalPath+"\\"+f.Name, LocalPath+"\\"+version+".exe")
 		if creErr != nil {
-			return "","", creErr
+			return "", creErr
 		}
 		defer CreateFile.Close()
 
 		// 复制文件内容
 		if _, copyErr := io.Copy(CreateFile, rc); copyErr != nil {
-			return "","", copyErr
+			return "", copyErr
 		}
 	}
 	//删除 LocalPath + "\\Tempchromedriver.zip"
-	return LocalPath + "\\chromedriver.exe",ChromeDriverVersion, nil
+	return LocalPath + "\\" + version + ".exe", nil
 }
 
 //删除临时文件  > Delete Temp File
@@ -202,19 +226,24 @@ func DeleteTemFile() {
 }
 
 //清理所有文件  >  Clean All File
-func CleanAllFile() {
-	LocalPath, _ := CheckFile()
-	//删除文件夹中所有文件
-	os.RemoveAll(LocalPath)
+func CleanAllFile() string {
+	LocalPath, err := CheckFile()
+	if err == nil && LocalPath != "" {
+		return LocalPath
+	}
+	return ""
 }
 
 //流程 >  Process  >  Main
 func AutoDownload_ChromeDriver(printLog bool) string {
-	CleanAllFile()
-	path,version, _ := Download()
+	driverPatch := CleanAllFile()
+	if driverPatch != "" {
+		return driverPatch
+	}
+	path, _ := Download()
 	DeleteTemFile()
-	if printLog{
-		fmt.Printf("successful checking chrome driver for version: %s.\n", version)
+	if printLog {
+		fmt.Printf("successful checking chrome driver!")
 	}
 	return path
 }
