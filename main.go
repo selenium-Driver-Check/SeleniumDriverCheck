@@ -157,7 +157,6 @@ func Download() (string, string, error) {
 	}
 
 	DownLoadUrl, _ := GetChromeDriverDownLoadUrl(ChromeDriverVersion)
-	fmt.Println(DownLoadUrl)
 	// 下载 chromedriver
 	resp, err := grequests.Get(DownLoadUrl, nil)
 	if err != nil {
@@ -223,6 +222,7 @@ func CheckDriverInstace() string {
 		//查看 localPath+"\\"+mainVersion+".exe是否存在
 		_, findErr := os.Stat(LocalPath + "\\" + mainVersion + ".exe")
 		if findErr == nil {
+			fmt.Println("已经找到")
 			return LocalPath + "\\" + mainVersion + ".exe"
 		} else {
 			return ""
@@ -233,7 +233,6 @@ func CheckDriverInstace() string {
 
 //流程 >  Process  >  Main
 func AutoDownload_ChromeDriver(printLog bool) string {
-	fmt.Println("1")
 	driverPatch := CheckDriverInstace()
 	if driverPatch != "" {
 		return driverPatch
