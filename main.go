@@ -222,7 +222,6 @@ func CheckDriverInstace() string {
 		//查看 localPath+"\\"+mainVersion+".exe是否存在
 		_, findErr := os.Stat(LocalPath + "\\" + mainVersion + ".exe")
 		if findErr == nil {
-			fmt.Println("已经找到")
 			return LocalPath + "\\" + mainVersion + ".exe"
 		} else {
 			return ""
