@@ -47,6 +47,46 @@ func CheckFile() (string, error) {
 			if createErr == nil {
 				return filepath.Join(dir, fileName), nil
 			}
+		} else if runtime.GOOS == "darwin" {
+			//检测当前用户电脑用户名
+			u, err := user.Current()
+			if err == nil {
+				//查看/Users/u.Username/Library/Application Support下有哪些文件
+				dir := fmt.Sprintf(`/Users/%s/Library/Application Support`, GetRealName(u.Username))
+				files, readErr := ioutil.ReadDir(dir)
+				if readErr != nil {
+					return "", readErr
+				}
+				for _, checkfile := range files {
+					if checkfile.Name() == fileName {
+						return filepath.Join(dir, checkfile.Name()), nil
+					}
+				}
+				createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
+				if createErr == nil {
+					return filepath.Join(dir, fileName), nil
+				}
+			}
+		} else if runtime.GOOS == "linux" {
+			//检测当前用户电脑用户名
+			u, err := user.Current()
+			if err == nil {
+				//查看/home/u.Username/.local/share下有哪些文件
+				dir := fmt.Sprintf(`/home/%s/.local/share`, GetRealName(u.Username))
+				files, readErr := ioutil.ReadDir(dir)
+				if readErr != nil {
+					return "", readErr
+				}
+				for _, checkfile := range files {
+					if checkfile.Name() == fileName {
+						return filepath.Join(dir, checkfile.Name()), nil
+					}
+				}
+				createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
+				if createErr == nil {
+					return filepath.Join(dir, fileName), nil
+				}
+			}
 		}
 	}
 	return "", nil
