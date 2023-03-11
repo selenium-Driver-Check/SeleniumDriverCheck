@@ -134,15 +134,32 @@ func GetPcVersion() (string, string) {
 
 //获取当前电脑Chrome版本号 > Get Version for chrome
 func GetChromeVersion() (bool, string) {
-	output, _ := exec.Command("reg", "query", "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon").Output()
-	chromeVersion := strings.Split(string(output), "\n")
-	for _, v := range chromeVersion {
-		if strings.Contains(v, "version") {
-			versionId := strings.Split(v, "    ")[3]
-			return true, versionId
+	if strings.HasPrefix(runtime.GOOS, "win") {
+		output, _ := exec.Command("reg", "query", "HKEY_CURRENT_USER\\Software\\Google\\Chrome\\BLBeacon").Output()
+		chromeVersion := strings.Split(string(output), "\n")
+		for _, v := range chromeVersion {
+			if strings.Contains(v, "version") {
+				versionId := strings.Split(v, "    ")[3]
+				return true, versionId
+			}
 		}
+		return false, ""
+	} else if strings.HasPrefix(runtime.GOOS, "darwin") {
+		out, err := exec.Command("sh", "-c", `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --version`).Output()
+		if err != nil {
+			return false, ""
+		}
+		version := strings.Split(string(out), " ")[2]
+		return true, version
+	} else if strings.HasPrefix(runtime.GOOS, "linux") {
+		out, err := exec.Command("sh", "-c", `google-chrome --version`).Output()
+		if err != nil {
+			return false, ""
+		}
+		version := strings.Split(string(out), " ")[2]
+		return true, version
 	}
-	return false, ""
+	return false, "Can't Found"
 }
 
 //获取Chrome Driver 链接  > Get Chrome Driver Url
