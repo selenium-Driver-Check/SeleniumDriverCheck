@@ -1,4 +1,4 @@
-package SeleniumDriverCheck
+package main
 
 import (
 	"archive/zip"
@@ -25,6 +25,11 @@ type Contents struct {
 }
 
 var fileName = "SeleniumDriverPath"
+var PcPaltform = runtime.GOOS
+
+func main() {
+	fmt.Println(AutoDownload_ChromeDriver(false))
+}
 
 func CheckFile() (string, error) {
 	//检测用户系统是windows还是mac
@@ -47,48 +52,49 @@ func CheckFile() (string, error) {
 			if createErr == nil {
 				return filepath.Join(dir, fileName), nil
 			}
-		} else if runtime.GOOS == "darwin" {
-			//检测当前用户电脑用户名
-			u, err := user.Current()
-			if err == nil {
-				//查看/Users/u.Username/Library/Application Support下有哪些文件
-				dir := fmt.Sprintf(`/Users/%s/Library/Application Support`, GetRealName(u.Username))
-				files, readErr := ioutil.ReadDir(dir)
-				if readErr != nil {
-					return "", readErr
-				}
-				for _, checkfile := range files {
-					if checkfile.Name() == fileName {
-						return filepath.Join(dir, checkfile.Name()), nil
-					}
-				}
-				createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
-				if createErr == nil {
-					return filepath.Join(dir, fileName), nil
+		}
+	} else if runtime.GOOS == "darwin" {
+		//检测当前用户电脑用户名
+		u, err := user.Current()
+		if err == nil {
+			//查看/Users/u.Username/Library/Application Support下有哪些文件
+			dir := fmt.Sprintf(`/Users/%s/`, GetRealName(u.Username))
+			files, readErr := ioutil.ReadDir(dir)
+			if readErr != nil {
+				return "", readErr
+			}
+			for _, checkfile := range files {
+				if checkfile.Name() == fileName {
+					return filepath.Join(dir, checkfile.Name()), nil
 				}
 			}
-		} else if runtime.GOOS == "linux" {
-			//检测当前用户电脑用户名
-			u, err := user.Current()
-			if err == nil {
-				//查看/home/u.Username/.local/share下有哪些文件
-				dir := fmt.Sprintf(`/home/%s/.local/share`, GetRealName(u.Username))
-				files, readErr := ioutil.ReadDir(dir)
-				if readErr != nil {
-					return "", readErr
+			createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
+			if createErr == nil {
+				return filepath.Join(dir, fileName), nil
+			}
+		}
+	} else if runtime.GOOS == "linux" {
+		//检测当前用户电脑用户名
+		u, err := user.Current()
+		if err == nil {
+			//查看/home/u.Username/.local/share下有哪些文件
+			dir := fmt.Sprintf(`/home/%s/.local/share`, GetRealName(u.Username))
+			files, readErr := ioutil.ReadDir(dir)
+			if readErr != nil {
+				return "", readErr
+			}
+			for _, checkfile := range files {
+				if checkfile.Name() == fileName {
+					return filepath.Join(dir, checkfile.Name()), nil
 				}
-				for _, checkfile := range files {
-					if checkfile.Name() == fileName {
-						return filepath.Join(dir, checkfile.Name()), nil
-					}
-				}
-				createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
-				if createErr == nil {
-					return filepath.Join(dir, fileName), nil
-				}
+			}
+			createErr := os.Mkdir(filepath.Join(dir, fileName), os.ModePerm)
+			if createErr == nil {
+				return filepath.Join(dir, fileName), nil
 			}
 		}
 	}
+
 	return "", nil
 }
 func GetRealName(fullName string) string {
@@ -199,6 +205,10 @@ func GetMatchedChromeDriverVersion(version string) (string, error) {
 
 //下载Chrome Driver 临时文件  >  Download Chrome Driver Temp File
 func Download() (string, string, error) {
+	var FilePath, DownLoadedFilePath, ChromeDriverVersion string
+	var Err, err error
+	var localFile = &os.File{}
+
 	version := GetVersionForCreateFile()
 	LocalPath, Err := CheckFile()
 	if Err != nil {
@@ -208,7 +218,11 @@ func Download() (string, string, error) {
 	if !Status {
 		panic("Chrome is not installed.")
 	}
-	ChromeDriverVersion, Err := GetMatchedChromeDriverVersion(ChromeVersion[:14])
+	if PcPaltform == "windows" {
+		ChromeDriverVersion, Err = GetMatchedChromeDriverVersion(ChromeVersion[:14])
+	} else if PcPaltform == "darwin" {
+		ChromeDriverVersion, Err = GetMatchedChromeDriverVersion(ChromeVersion)
+	}
 	if Err != nil {
 		return "", version, Err
 	}
@@ -221,7 +235,12 @@ func Download() (string, string, error) {
 	}
 	defer resp.Close()
 	// 保存文件到本地
-	localFile, err := os.Create(LocalPath + "\\Tempchromedriver.zip")
+	if PcPaltform == "windows" {
+		localFile, err = os.Create(LocalPath + "\\Tempchromedriver.zip")
+
+	} else if PcPaltform == "darwin" {
+		localFile, err = os.Create(LocalPath + "/Tempchromedriver.zip")
+	}
 	if err != nil {
 		return "", version, Err
 	}
@@ -229,7 +248,11 @@ func Download() (string, string, error) {
 	if _, copyErr := io.Copy(localFile, resp); err != nil {
 		return "", version, copyErr
 	}
-	FilePath := LocalPath + "\\Tempchromedriver.zip"
+	if PcPaltform == "windows" {
+		FilePath = LocalPath + "\\Tempchromedriver.zip"
+	} else if PcPaltform == "darwin" {
+		FilePath = LocalPath + "/Tempchromedriver.zip"
+	}
 	//将filePath中的chromedriver.exe文件解压到当前文件夹
 	// 打开压缩包文件
 	zipRead, err := zip.OpenReader(FilePath)
@@ -247,20 +270,43 @@ func Download() (string, string, error) {
 		defer rc.Close()
 
 		// 创建目标文件
-		CreateFile, creErr := os.Create(LocalPath + "\\" + f.Name)
-		os.Rename(LocalPath+"\\"+f.Name, LocalPath+"\\"+version+".exe")
-		if creErr != nil {
-			return "", version, creErr
+		if PcPaltform == "windows" {
+			CreateFile, creErr := os.Create(LocalPath + "\\" + f.Name)
+			os.Rename(LocalPath+"\\"+f.Name, LocalPath+"\\"+version+".exe")
+			if creErr != nil {
+				return "", version, creErr
+			}
+			defer CreateFile.Close()
+			// 复制文件内容
+			if _, copyErr := io.Copy(CreateFile, rc); copyErr != nil {
+				return "", version, copyErr
+			}
+		} else if PcPaltform == "darwin" {
+			CreateFile, creErr := os.Create(LocalPath + "/" + f.Name)
+			fmt.Println(LocalPath + "/" + f.Name)
+			if f.Name == "chromedriver" {
+				os.Rename(LocalPath+"/"+f.Name, LocalPath+"/"+version)
+				os.Chmod(LocalPath+"/"+version, 0755)
+			}
+			if creErr != nil {
+				return "", version, creErr
+			}
+			defer CreateFile.Close()
+			// 复制文件内容
+			if _, copyErr := io.Copy(CreateFile, rc); copyErr != nil {
+				return "", version, copyErr
+			}
 		}
-		defer CreateFile.Close()
 
-		// 复制文件内容
-		if _, copyErr := io.Copy(CreateFile, rc); copyErr != nil {
-			return "", version, copyErr
-		}
 	}
 	//删除 LocalPath + "\\Tempchromedriver.zip"
-	return LocalPath + "\\" + version + ".exe", version, nil
+	if PcPaltform == "windows" {
+		DownLoadedFilePath = LocalPath + "\\" + version + ".exe"
+	} else if PcPaltform == "darwin" {
+		DownLoadedFilePath = LocalPath + "/" + version
+	}
+
+	return DownLoadedFilePath, version, nil
 }
 
 //删除临时文件  > Delete Temp File
@@ -275,15 +321,28 @@ func DeleteTemFile(version string) {
 func CheckDriverInstace() string {
 	mainVersion := GetVersionForCreateFile()
 	LocalPath, err := CheckFile()
-	if err == nil && LocalPath != "" {
-		//查看 localPath+"\\"+mainVersion+".exe是否存在
-		_, findErr := os.Stat(LocalPath + "\\" + mainVersion + ".exe")
-		if findErr == nil {
-			return LocalPath + "\\" + mainVersion + ".exe"
-		} else {
-			return ""
+	if PcPaltform == "windows" {
+		if err == nil && LocalPath != "" {
+			//查看 localPath+"\\"+mainVersion+".exe是否存在
+			_, findErr := os.Stat(LocalPath + "\\" + mainVersion + ".exe")
+			if findErr == nil {
+				return LocalPath + "\\" + mainVersion + ".exe"
+			} else {
+				return ""
+			}
+		}
+	} else if PcPaltform == "darwin" {
+		if err == nil && LocalPath != "" {
+			//查看 localPath+"\\"+mainVersion+".exe是否存在
+			_, findErr := os.Stat(LocalPath + "/" + mainVersion)
+			if findErr == nil {
+				return LocalPath + "/" + mainVersion
+			} else {
+				return ""
+			}
 		}
 	}
+
 	return ""
 }
 
