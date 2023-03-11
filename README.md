@@ -3,7 +3,7 @@ this package is for auto installing chrome driver for Go-selenium
 
 ### Support
 ```
-Win
+Win / MAC OS
 ```
 
 
