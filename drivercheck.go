@@ -279,7 +279,6 @@ func Download() (string, string, error) {
 			}
 		} else if PcPaltform == "darwin" {
 			CreateFile, creErr := os.Create(LocalPath + "/" + f.Name)
-			fmt.Println(LocalPath + "/" + f.Name)
 			if f.Name == "chromedriver" {
 				os.Rename(LocalPath+"/"+f.Name, LocalPath+"/"+version)
 				os.Chmod(LocalPath+"/"+version, 0755)
