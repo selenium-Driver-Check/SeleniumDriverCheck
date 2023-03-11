@@ -1,4 +1,4 @@
-package main
+package SeleniumDriverCheck
 
 import (
 	"archive/zip"
@@ -26,10 +26,6 @@ type Contents struct {
 
 var fileName = "SeleniumDriverPath"
 var PcPaltform = runtime.GOOS
-
-func main() {
-	fmt.Println(AutoDownload_ChromeDriver(false))
-}
 
 func CheckFile() (string, error) {
 	//检测用户系统是windows还是mac
@@ -312,9 +308,14 @@ func Download() (string, string, error) {
 //删除临时文件  > Delete Temp File
 func DeleteTemFile(version string) {
 	LocalPath, _ := CheckFile()
-	os.Remove(LocalPath + "\\Tempchromedriver.zip")
-	os.Remove(LocalPath + "\\LICENSE.chromedriver")
-	os.Rename(LocalPath+"\\"+"chromedriver"+".exe", LocalPath+"\\"+version+".exe")
+	if PcPaltform == "windows" {
+		os.Remove(LocalPath + "\\Tempchromedriver.zip")
+		os.Remove(LocalPath + "\\LICENSE.chromedriver")
+		os.Rename(LocalPath+"\\"+"chromedriver"+".exe", LocalPath+"\\"+version+".exe")
+	} else if PcPaltform == "darwin" {
+		os.Remove(LocalPath + "/Tempchromedriver.zip")
+		os.Remove(LocalPath + "/LICENSE.chromedriver")
+	}
 }
 
 //查看driver实例是否存在  >
