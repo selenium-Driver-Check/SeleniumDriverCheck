@@ -287,7 +287,7 @@ func Download(mainVersion string) (string, string, error) {
 	// 打开压缩包文件
 	zipRead, err := zip.OpenReader(FilePath)
 	if err != nil {
-		panic(err)
+		panic("There is no ChromeDriver that matches the current Chrome version. It is recommended to downgrade Chrome and try again!")
 	}
 	defer zipRead.Close()
 	// 遍历压缩包中的每一个文件
