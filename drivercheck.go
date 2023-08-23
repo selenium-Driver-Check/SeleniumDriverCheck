@@ -476,11 +476,3 @@ func AutoDownload_ChromeDriver(printLog bool) string {
 	}
 	return path
 }
-
-func TestNew() (string, error) {
-	test_result, err := GetNewDriverVersion("115")
-	if err == nil {
-		return test_result, err
-	}
-	return "", err
-}
