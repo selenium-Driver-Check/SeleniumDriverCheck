@@ -176,7 +176,7 @@ func GetChromeDriverDownLoadUrl(version string) (string, bool) {
 }
 
 func GetNewChromeDriverDownLoadUrl(version string) (string, bool) {
-	http_base_url := "https://edgedl.me.gvt1.com/edgedl/chrome/chrome-for-testing/"
+	http_base_url := "https://storage.googleapis.com/chrome-for-testing-public/"
 	platform, architecture := GetPcVersion()
 	if platform != "" && architecture != "" {
 		return http_base_url + version + "/" + platform + architecture + "/chromedriver-" + platform + architecture + ".zip", true
